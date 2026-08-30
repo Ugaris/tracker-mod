@@ -26,7 +26,7 @@
 
 #include "amod/amod.h"
 
-#define TRACKER_VERSION "1.0.0"
+#define TRACKER_VERSION "1.1.0"
 
 /* Chat color escape: 0xB0 "c" <palette index> (octal escape keeps the
  * following digits out of the hex escape). Palette: 2 = light green,
@@ -47,6 +47,11 @@ static int s_show_exp = 1;
 static int s_show_gold = 1;
 static int s_show_drops = 1;
 static int s_show_overlay = 0;
+
+/* overlay position: drag offset + the rect drawn last frame */
+static int s_off_x, s_off_y;
+static int s_ov_x0, s_ov_y0, s_ov_x1, s_ov_y1;
+static int s_drag, s_drag_mx, s_drag_my;
 
 /* change detection */
 static uint32_t s_last_exp, s_last_gold;
@@ -132,8 +137,8 @@ static void save_config(void)
     config_path(path, sizeof(path));
     f = fopen(path, "w");
     if (!f) return;
-    fprintf(f, "exp=%d\ngold=%d\ndrops=%d\noverlay=%d\n",
-            s_show_exp, s_show_gold, s_show_drops, s_show_overlay);
+    fprintf(f, "exp=%d\ngold=%d\ndrops=%d\noverlay=%d\noffx=%d\noffy=%d\n",
+            s_show_exp, s_show_gold, s_show_drops, s_show_overlay, s_off_x, s_off_y);
     fclose(f);
 }
 
@@ -151,6 +156,8 @@ static void load_config(void)
         else if (!strncmp(line, "gold=", 5)) s_show_gold = v;
         else if (!strncmp(line, "drops=", 6)) s_show_drops = v;
         else if (!strncmp(line, "overlay=", 8)) s_show_overlay = v;
+        else if (!strncmp(line, "offx=", 5)) s_off_x = v;
+        else if (!strncmp(line, "offy=", 5)) s_off_y = v;
     }
     fclose(f);
 }
@@ -261,9 +268,15 @@ static void draw_overlay(void)
     unsigned int secs = (s_ticks - s_session_start) / 24;
     long long per_hour = secs ? s_session_exp * 3600 / secs : 0;
     char t_time[24], t_exp[40], t_rate[40], t_gold[44], t_drops[24];
-    int x0 = dotx(DOT_MTL) + 12;
-    int y0 = doty(DOT_MTL) + 26;
+    int x0 = dotx(DOT_MTL) + 12 + s_off_x;
+    int y0 = doty(DOT_MTL) + 26 + s_off_y;
     int x, w;
+
+    /* keep the chip reachable */
+    if (x0 < dotx(DOT_MTL) - 40) x0 = dotx(DOT_MTL) - 40;
+    if (y0 < doty(DOT_MTL) + 4) y0 = doty(DOT_MTL) + 4;
+    if (x0 > dotx(DOT_MBR) - 120) x0 = dotx(DOT_MBR) - 120;
+    if (y0 > doty(DOT_MBR) - 20) y0 = doty(DOT_MBR) - 20;
 
     snprintf(t_time, sizeof(t_time), "%u:%02u:%02u", secs / 3600, (secs / 60) % 60, secs % 60);
     snprintf(t_exp, sizeof(t_exp), "%s%s xp", s_session_exp >= 0 ? "+" : "",
@@ -279,6 +292,11 @@ static void draw_overlay(void)
         render_text_length(RENDER_TEXT_SMALL, t_rate) + 14 +
         render_text_length(RENDER_TEXT_SMALL, t_gold) + 14 +
         render_text_length(RENDER_TEXT_SMALL, t_drops);
+
+    s_ov_x0 = x0 - 8;
+    s_ov_y0 = y0 - 5;
+    s_ov_x1 = x0 + w + 8;
+    s_ov_y1 = y0 + 15;
 
     render_rounded_rect_filled_alpha(x0 - 8, y0 - 5, x0 + w + 8, y0 + 15, 6, OV_BG, 205);
     render_rounded_rect_alpha(x0 - 8, y0 - 5, x0 + w + 8, y0 + 15, 6, OV_EDGE, 120);
@@ -352,6 +370,45 @@ DLL_EXPORT void amod_frame(void)
 {
     if (!s_ingame || !s_show_overlay) return;
     draw_overlay();
+}
+
+/* The overlay chip is draggable: grab it anywhere, drop it anywhere. */
+
+static int inside_overlay(int x, int y)
+{
+    return s_ingame && s_show_overlay &&
+           x >= s_ov_x0 && x <= s_ov_x1 && y >= s_ov_y0 && y <= s_ov_y1;
+}
+
+DLL_EXPORT void amod_mouse_move(int x, int y)
+{
+    if (s_drag) {
+        s_off_x += x - s_drag_mx;
+        s_off_y += y - s_drag_my;
+        s_drag_mx = x;
+        s_drag_my = y;
+    }
+}
+
+DLL_EXPORT int amod_mouse_over(int x, int y)
+{
+    return inside_overlay(x, y);
+}
+
+DLL_EXPORT int amod_mouse_click(int x, int y, int what)
+{
+    if (what == SDL_MOUM_LDOWN && inside_overlay(x, y)) {
+        s_drag = 1;
+        s_drag_mx = x;
+        s_drag_my = y;
+        return 1;
+    }
+    if (what == SDL_MOUM_LUP && s_drag) {
+        s_drag = 0;
+        save_config();
+        return 1;
+    }
+    return 0;
 }
 
 static int toggle(int *setting, const char *name)

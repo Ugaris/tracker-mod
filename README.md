@@ -11,7 +11,8 @@ what you are earning:
   (a monster drops loot, another player discards something), you get a chat
   line with its position and distance, so nothing is missed under a corpse.
 - **Session overlay** — a small HUD chip with session time, exp gained,
-  exp/hour, gold delta and drop count.
+  exp/hour, gold delta and drop count. Drag it anywhere on the screen;
+  the position is remembered.
 
 ## Commands
 
