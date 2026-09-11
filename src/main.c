@@ -419,6 +419,49 @@ static int toggle(int *setting, const char *name)
     return 1;
 }
 
+/* ---- Options > Mods ------------------------------------------------------
+ * The same four switches #track toggles. Both paths write the same variables
+ * and call save_config(), so the mod keeps one source of truth for them. */
+DLL_EXPORT int amod_options_count(void)
+{
+    return 5;
+}
+
+DLL_EXPORT int amod_option_get(int index, struct amod_option *out)
+{
+    static const struct { const char *label; int *val; } rows[] = {
+        { "Experience lines", &s_show_exp },
+        { "Gold lines",       &s_show_gold },
+        { "Drop announcements", &s_show_drops },
+        { "Session overlay",  &s_show_overlay },
+    };
+
+    memset(out, 0, sizeof(*out));
+    if (index == 0) {
+        out->type = AMOD_OPT_HEADER;
+        snprintf(out->label, sizeof(out->label), "Gains Tracker");
+        return 1;
+    }
+    index--;
+    if (index < 0 || index >= (int)(sizeof(rows) / sizeof(rows[0]))) return 0;
+    out->type = AMOD_OPT_TOGGLE;
+    out->value = *rows[index].val;
+    snprintf(out->label, sizeof(out->label), "%s", rows[index].label);
+    return 1;
+}
+
+DLL_EXPORT void amod_option_set(int index, int value)
+{
+    switch (index) {
+    case 1: s_show_exp = value; break;
+    case 2: s_show_gold = value; break;
+    case 3: s_show_drops = value; break;
+    case 4: s_show_overlay = value; break;
+    default: return;
+    }
+    save_config();
+}
+
 DLL_EXPORT int amod_client_cmd(const char *buf)
 {
     if (strncmp(buf, "#track", 6)) return 0;
