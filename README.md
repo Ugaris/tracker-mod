@@ -47,11 +47,15 @@ cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build
 ```
 
-Produces `bmod.so` / `bmod.dylib` / `bmod.dll` for the current platform.
+Produces `tracker.so` / `tracker.dylib` / `tracker.dll` for the current platform.
 On Windows you must first copy `lib/moac.a` (and `moac.lib`) from the client
 release's `mod-sdk.zip` into `lib/` — mods link against the client's import
-library there. Drop the library next to the game binary (the launcher does
-this for you and picks a free slot).
+library there. Drop the library into its own folder under the game's user
+directory, beside a `mod.json` (the launcher does this for you):
+
+```
+<userdir>/mods/Ugaris-tracker-mod/{mod.json,tracker.so}
+```
 
 Released binaries are built by [GitHub Actions](.github/workflows/build.yml)
 from tags; no binaries are committed to this repository.
