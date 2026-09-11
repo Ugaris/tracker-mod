@@ -1,6 +1,6 @@
 {
   "name": "Gains Tracker",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Prints your exact experience and gold gains to chat, announces item drops appearing around you, and shows a session overlay with exp/hour.",
   "author": "Ugaris Team",
   "authorUrl": "https://github.com/Ugaris",
@@ -8,17 +8,17 @@
   "files": [
     {
       "name": "tracker.dll",
-      "path": "https://github.com/Ugaris/tracker-mod/releases/download/v1.1.0/bmod.dll",
+      "path": "https://github.com/Ugaris/tracker-mod/releases/download/v1.1.1/tracker.dll",
       "platform": "windows"
     },
     {
       "name": "tracker.dylib",
-      "path": "https://github.com/Ugaris/tracker-mod/releases/download/v1.1.0/bmod.dylib",
+      "path": "https://github.com/Ugaris/tracker-mod/releases/download/v1.1.1/tracker.dylib",
       "platform": "macos"
     },
     {
       "name": "tracker.so",
-      "path": "https://github.com/Ugaris/tracker-mod/releases/download/v1.1.0/bmod.so",
+      "path": "https://github.com/Ugaris/tracker-mod/releases/download/v1.1.1/tracker.so",
       "platform": "linux"
     }
   ],
